@@ -1,0 +1,213 @@
+<!doctype html>
+
+<meta charset="utf-8">
+
+<title>Keyboard movment</title>
+
+<body>
+
+<script src="pixi.min.js"></script>
+
+<script>
+
+
+    //Aliases
+
+    var Container = PIXI.Container,
+        autoDetectRenderer = PIXI.autoDetectRenderer,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        Sprite = PIXI.Sprite;
+
+    StageSizeX = 512;
+    StageSizeY = 512;
+
+    //Create a Pixi stage and renderer and add the
+    //renderer.view to the DOM
+
+    var stage = new Container(),
+        renderer = autoDetectRenderer(StageSizeX, StageSizeY);
+    document.body.appendChild(renderer.view);
+
+    loader
+        .add("images/cat.png")
+        .load(setup);
+
+    //Define any variables that are used in more than one function
+    var cat, state;
+
+    function setup() {
+
+        //Create the `cat` sprite
+        cat = new Sprite(resources["images/cat.png"].texture);
+
+        cat.y = 96;
+        cat.vl = 0;
+        cat.vr = 0;
+        cat.vu = 0;
+        cat.vd = 0;
+        cat.vx = 0;
+        cat.vy = 0;
+        cat.height = 64;
+        cat.width = 64;
+
+        stage.addChild(cat);
+
+        //Capture the keyboard arrow keys
+        var key_left = keyboard(37),
+            key_up = keyboard(38),
+            key_right = keyboard(39),
+            key_down = keyboard(40),
+            key_w = keyboard(87),
+            key_a = keyboard(65),
+            key_s = keyboard(83),
+            key_d = keyboard(68);
+
+        //Left arrow key `press` method
+
+        key_left.press = function () {
+            //Change the cat's velocity when the key is pressed
+            cat.vl = -5;
+        };
+
+        //Left arrow key `release` method
+        key_left.release = function () {
+            //If the left arrow has been released, and the right arrow isn't down,
+            //and the cat isn't moving vertically:
+            //Stop the cat
+
+            cat.vl = 0;
+        };
+
+        //Up
+        key_up.press = function () {
+            cat.vu = -5;
+        };
+
+        key_up.release = function () {
+            cat.vu = 0;
+        };
+
+        //Right
+        key_right.press = function () {
+            cat.vr = 5;
+        };
+
+        key_right.release = function () {
+            cat.vr = 0;
+        };
+
+        //Down
+        key_down.press = function () {
+            cat.vd = 5;
+        };
+
+        key_down.release = function () {
+            cat.vd = 0;
+        };
+
+        key_w.press = key_up.press;
+        key_w.release = key_up.release;
+        key_a.press = key_left.press;
+        key_a.release = key_left.release;
+        key_s.press = key_down.press;
+        key_s.release = key_down.release;
+        key_d.press = key_right.press;
+        key_d.release = key_right.release;
+
+        //Set the game state
+        state = play;
+
+        //Start the game loop
+        gameLoop();
+    }
+
+
+    function gameLoop() {
+
+        //Loop this function 60 times per second
+        requestAnimationFrame(gameLoop);
+
+        //Update the current game state
+        state();
+
+        //Render the stage
+        renderer.render(stage);
+    }
+
+
+    function play() {
+
+        //Use the cat's velocity to make it move
+        cat.vx = cat.vl + cat.vr;
+        cat.vy = cat.vu + cat.vd;
+        cat.x += cat.vx;
+        cat.y += cat.vy;
+
+        if (cat.x < 0) {
+            cat.x = 0;
+            //cat.vx=0;
+        }
+        if (cat.x > StageSizeX - cat.width) {
+            cat.x = StageSizeX - cat.width;
+            //cat.vx=0;
+        }
+        if (cat.y < 0) {
+            cat.y = 0;
+            //cat.vy=0;
+        }
+        if (cat.y > StageSizeY - cat.height) {
+            cat.y = StageSizeY - cat.height;
+            //cat.vy=0;
+        }
+    }
+
+
+    //The `keyboard` helper function
+    function keyboard(keyCode) {
+
+        var key = {};
+        key.code = keyCode;
+        key.isDown = false;
+        key.isUp = true;
+        key.press = undefined;
+        key.release = undefined;
+
+        //The `downHandler`
+        key.downHandler = function (event) {
+            if (event.keyCode === key.code) {
+                if (key.isUp && key.press) key.press();
+                key.isDown = true;
+                key.isUp = false;
+            }
+            event.preventDefault();
+        };
+
+
+        //The `upHandler`
+
+        key.upHandler = function (event) {
+
+            if (event.keyCode === key.code) {
+                if (key.isDown && key.release) key.release();
+                key.isDown = false;
+                key.isUp = true;
+            }
+            event.preventDefault();
+        };
+
+
+        //Attach event listeners
+        window.addEventListener(
+            "keydown", key.downHandler.bind(key), false
+        );
+
+        window.addEventListener(
+            "keyup", key.upHandler.bind(key), false
+        );
+        return key;
+    }
+
+</script>
+
+</body>
